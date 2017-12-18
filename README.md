@@ -8,3 +8,6 @@ https://studygolang.com/articles/5024
 
 unicode码表
 http://www.tamasoft.co.jp/en/general-info/unicode.html
+
+Go语言中的单引号、双引号、反引号
+https://studygolang.com/articles/7312
