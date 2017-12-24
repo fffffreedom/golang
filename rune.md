@@ -5,3 +5,5 @@
 出于简化语言的考虑， Go语言的多数API都假设字符串为UTF-8编码。尽管Unicode字符在标准库中有支持，但实际上较少使用。
 ## The-Golang-Standard-Library-by-Example
 http://books.studygolang.com/The-Golang-Standard-Library-by-Example/chapter02/02.5.html
+## uft8库解读
+https://www.cnblogs.com/golove/p/5889790.html
