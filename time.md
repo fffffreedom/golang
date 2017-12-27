@@ -22,6 +22,7 @@ import (
 // Go 语言使用 Location 来表示地区相关的时区，一个 Location 可能表示多个时区。
 // Time struct 是一个时间点，基于时区
 // Time 零值代表时间点 January 1, year 1, 00:00:00.000000000 UTC
+// http://books.studygolang.com/The-Golang-Standard-Library-by-Example/chapter04/04.4.html
 
 func main () {
 
@@ -76,6 +77,50 @@ func main () {
 	// 2016-11-28 19:36:25
 	// 2016-11-29 11:36:25
 	// 中国比洛杉矶快16小时
+
+	fmt.Println("create a time ticker!")
+	tr := time.NewTicker(10000000000)
+	fmt.Println(<- tr.C)
+	tr.Stop()
+
+	tt := time.Tick(1000000000)
+	go func () {
+		for {
+			fmt.Println(<- tt)
+		}
+	}()
+
+	// 定时器
+	var input chan string
+	demo(input)
+
+	fmt.Println("never get here!")
+	//time.Sleep(2)
+	//input <- "hi"
+
+
+
+}
+
+
+func demo(input chan string) {
+	t1 := time.NewTimer(time.Second * 5)
+	t2 := time.NewTimer(time.Second * 10)
+
+	for {
+		select {
+		case msg := <- input:
+			fmt.Println(msg)
+
+		case <-t1.C:
+			fmt.Println("5s timer")
+			t1.Reset(time.Second * 5)
+
+		case <-t2.C:
+			fmt.Println("10s timer")
+			t2.Reset(time.Second * 10)
+		}
+	}
 }
 
 ```
