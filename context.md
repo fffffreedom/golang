@@ -50,16 +50,20 @@ GO1.7之后，新增了context.Context这个package，实现goroutine的管理�
 
 ### Context interface
 ```
+// Context's methods may be called by multiple goroutines simultaneously.
+// context的方法是线程安全的，可以被多个goroutine使用
 type Context interface {
 	// Deadline returns the time when work done on behalf of this context
 	// should be canceled.  Deadline returns ok==false when no deadline is
 	// set.  Successive calls to Deadline return the same results.
+	// 返回Context将要关闭的时间，如果设置了Deadline
 	Deadline() (deadline time.Time, ok bool)
 
 	// Done returns a channel that's closed when work done on behalf of this
 	// context should be canceled.  Done may return nil if this context can
 	// never be canceled.  Successive calls to Done return the same value.
-	//
+	// 当Context被canceled或是timeout 的时候，Done返回一个被closed的channel 
+	// 
 	// WithCancel arranges for Done to be closed when cancel is called;
 	// WithDeadline arranges for Done to be closed when the deadline
 	// expires; WithTimeout arranges for Done to be closed when the timeout
@@ -91,6 +95,7 @@ type Context interface {
 	// Canceled if the context was canceled or DeadlineExceeded if the
 	// context's deadline passed.  No other values for Err are defined.
 	// After Done is closed, successive calls to Err return the same value.
+	// 在Done的channel被closed后， Err代表被关闭的原因，Canceled或者DeadlineExceeded
 	Err() error
 
 	// Value returns the value associated with this context for key, or nil
@@ -138,6 +143,10 @@ type Context interface {
 	// 		u, ok := ctx.Value(userKey).(*User)
 	// 		return u, ok
 	// 	}
+	// 如果存在，Value返回与key相关了值，不存在返回nil
 	Value(key interface{}) interface{}
 }
 ```
+我们不需要手动实现这个接口，context 包已经给我们提供了两个，一个是 Background()，一个是TODO()，这两个函数都会返回一个 Context 的实例。只是返回的这两个实例都是空 Context。  
+
+### 主要结构
