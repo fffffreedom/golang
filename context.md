@@ -2,10 +2,11 @@
 
 ## context简介
 
-golang中的创建一个新的goroutine，并不会返回像c语言类似的pid，所有我们不能从外部杀死某个goroutine，所有我就得让它自己结束。
-之前我们用channel+select的方式，来解决这个问题，但是有些场景实现起来比较麻烦，例如由一个请求衍生出的各个goroutine之间需要满足一定的约束关系，
-以实现一些诸如有效期，中止routine树，传递请求全局变量之类的功能。于是google 就为我们提供一个解决方案，开源了context包；
-使用context实现上下文功能约定，需要将context.Context类型的变量作为函数的第一个参数（见package的介绍）。  
+golang中的创建一个新的goroutine，并不会返回像c语言类似的pid，所以我们不能从外部杀死某个goroutine，所以我们就得让它自己结束。
+之前我们用channel+select的方式，来解决这个问题，但是有些场景实现起来比较麻烦。例如，由一个请求衍生出的各个goroutine之间需要满足一定的约束关系，
+以实现一些诸如有效期，中止routine树，传递请求全局变量之类的功能。  
+
+google就为我们提供一个解决方案，开源了context包；使用context实现上下文功能约定，需要将context.Context类型的变量作为函数的第一个参数（见package的介绍）。  
 
 GO1.7之后，新增了context.Context这个package，实现goroutine的管理。  
 
