@@ -272,3 +272,6 @@ func (c *cancelCtx) cancel(removeFromParent bool, err error) {
 }
 ```
 
+## Reference
+golang中context包解读  
+https://studygolang.com/articles/9517  
