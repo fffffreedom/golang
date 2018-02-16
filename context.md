@@ -16,7 +16,15 @@ func WithTimeout(parent Context, timeout time.Duration) (Context, CancelFunc)
 func WithDeadline(parent Context, deadline time.Time) (Context, CancelFunc)
 func WithValue(parent Context, key, val interface{}) Context
 ```
-这四个函数接受相应的参数，再返回context，以及后面用来取消Context的CancelFunc。  
+这四个函数接受相应的参数，再返回context，以及后面用来取消Context的CancelFunc。  
+- WithCancel
+WithCancel对应的是cancelCtx，其中，返回一个cancelCtx，同时返回一个CancelFunc，CancelFunc是context包中定义的一个函数类型：type CancelFunc func()。调用这个CancelFunc时，关闭对应的c.done，也就是让他的后代goroutine退出。  
+- WithDeadline 和 WithTimeout
+WithDeadline和WithTimeout对应的是timerCtx，WithDeadline和WithTimeout是相似的，WithDeadline是设置具体的deadline时间，到达deadline的时候，后代goroutine退出，而WithTimeout简单粗暴，直接return WithDeadline(parent, time.Now().Add(timeout))。  
+- WithValue
+WithValue对应valueCtx，WithValue是在Context中设置一个map，拿到这个Context以及它的后代的goroutine都可以拿到map里的值。  
+
+从函数的声明可以看出，前面三个都是可以取消的，而WithValue则没有返回CancelFunc！  
 
 ## 实际案例
 
@@ -24,12 +32,11 @@ func WithValue(parent Context, key, val interface{}) Context
 ```
 	// This is the main context that everything should run in.
 	// All spawned goroutines should exit when cancel is called on this context.
-	// 在此上下文中调用取消时，所有衍生出的goroutines都应该退出。
+	// 在对此context调用cancel时，所有衍生出的goroutines都应该退出。
 	//
 	// Go routines spawned from main.go coordinate using a WaitGroup. 
 	// This provides a mechanism to allow the shutdownHandler goroutine to block
 	// until all the goroutines return. 
-	// 所有的go routines都会使用同一个WaitGroup，
 	//
 	// If those goroutines spawn other goroutines then they are responsible for
 	// blocking and returning only when cancel() is called.
@@ -194,7 +201,8 @@ func Background() Context {
 }
 ```
 
-### context相关继承
+### context是如何被取消的？
+
 context.go文件中有两个结构体继承了context接口：  
 ```
 // A cancelCtx can be canceled. When canceled, it also cancels any children
@@ -215,5 +223,52 @@ type valueCtx struct {
 	key, val interface{}
 }
 ```
-context是其中，cancelCtx实现了
+cancelCtx继承了context，并且实现了canceler接口（实现了cancel和Done方法），这样context就可以被直接取消了，实现context的取消功能。  
+```
+// A canceler is a context type that can be canceled directly. The
+// implementations are *cancelCtx and *timerCtx.
+type canceler interface {
+	cancel(removeFromParent bool, err error)
+	Done() <-chan struct{}
+}
+
+func (c *cancelCtx) Done() <-chan struct{} {
+	return c.done
+}
+
+func (c *cancelCtx) Err() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.err
+}
+
+func (c *cancelCtx) String() string {
+	return fmt.Sprintf("%v.WithCancel", c.Context)
+}
+
+// cancel closes c.done, cancels each of c's children, and, if
+// removeFromParent is true, removes c from its parent's children.
+func (c *cancelCtx) cancel(removeFromParent bool, err error) {
+	if err == nil {
+		panic("context: internal error: missing cancel error")
+	}
+	c.mu.Lock()
+	if c.err != nil {
+		c.mu.Unlock()
+		return // already canceled
+	}
+	c.err = err
+	close(c.done)  <==== 关闭cancel context
+	for child := range c.children {
+		// NOTE: acquiring the child's lock while holding parent's lock.
+		child.cancel(false, err)
+	}
+	c.children = nil
+	c.mu.Unlock()
+
+	if removeFromParent {
+		removeChild(c.Context, c)
+	}
+}
+```
 
