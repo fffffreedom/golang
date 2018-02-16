@@ -2,13 +2,47 @@
 
 ## context简介
 
-golang中的创建一个新的goroutine，并不会返回像c语言类似的pid，所以我们不能从外部杀死某个goroutine，所以我们就得让它自己结束。
-之前我们用channel+select的方式，来解决这个问题，但是有些场景实现起来比较麻烦。例如，由一个请求衍生出的各个goroutine之间需要满足一定的约束关系，
-以实现一些诸如有效期，中止routine树，传递请求全局变量之类的功能。  
+golang中的创建一个新的goroutine，并不会返回像c语言类似的pid，所以我们不能从外部杀死某个goroutine，所以我们就得让它自己结束。之前我们用channel+select的方式，来解决这个问题，但是有些场景实现起来比较麻烦。  
+例如，由一个请求衍生出的各个goroutine之间需要满足一定的约束关系，以实现一些诸如有效期，中止routine树，传递请求全局变量之类的功能。  
 
 google就为我们提供一个解决方案，开源了context包；使用context实现上下文功能约定，需要将context.Context类型的变量作为函数的第一个参数（见package的介绍）。  
 
-GO1.7之后，新增了context.Context这个package，实现goroutine的管理。  
+**GO1.7之后，新增了context.Context这个package，实现goroutine的管理。**  
+
+context包是用来管理goroutine的，它给goroutine提供一个运行环境；context可以被取消、会超时、有deadline、还可以在各goroutine之间传递值，这些不同功能的context是通过不同函数创建的！这些版本的函数是：  
+```
+func WithCancel(parent Context) (ctx Context, cancel CancelFunc)
+func WithTimeout(parent Context, timeout time.Duration) (Context, CancelFunc)
+func WithDeadline(parent Context, deadline time.Time) (Context, CancelFunc)
+func WithValue(parent Context, key, val interface{}) Context
+```
+这四个函数接受相应的参数，再返回context，以及后面用来取消Context的CancelFunc。  
+
+## 实际案例
+
+可以参见开源的网络插件flannel的实现，在main函数中，会创建context，并在后面的函数中使用：  
+```
+	// This is the main context that everything should run in.
+	// All spawned goroutines should exit when cancel is called on this context.
+	// 在此上下文中调用取消时，所有衍生出的goroutines都应该退出。
+	//
+	// Go routines spawned from main.go coordinate using a WaitGroup. 
+	// This provides a mechanism to allow the shutdownHandler goroutine to block
+	// until all the goroutines return. 
+	// 所有的go routines都会使用同一个WaitGroup，
+	//
+	// If those goroutines spawn other goroutines then they are responsible for
+	// blocking and returning only when cancel() is called.
+	ctx, cancel := context.WithCancel(context.Background())
+	wg := sync.WaitGroup{}
+
+	wg.Add(1)
+	go func() {
+		shutdownHandler(ctx, sigs, cancel)
+		wg.Done()
+	}()
+	......
+```
 
 ## 源码剖析
 
@@ -62,7 +96,7 @@ type Context interface {
 	// Done returns a channel that's closed when work done on behalf of this
 	// context should be canceled.  Done may return nil if this context can
 	// never be canceled.  Successive calls to Done return the same value.
-	// 当Context被canceled或是timeout 的时候，Done返回一个被closed的channel 
+	// 当Context被canceled或是timeout的时候，Done返回一个被closed的channel 
 	// 
 	// WithCancel arranges for Done to be closed when cancel is called;
 	// WithDeadline arranges for Done to be closed when the deadline
@@ -147,6 +181,39 @@ type Context interface {
 	Value(key interface{}) interface{}
 }
 ```
-我们不需要手动实现这个接口，context 包已经给我们提供了两个，一个是 Background()，一个是TODO()，这两个函数都会返回一个 Context 的实例。只是返回的这两个实例都是空 Context。  
+我们不需要手动实现这个接口，context包已经给我们提供了两个，一个是Background()，一个是TODO()，这两个函数都会返回一个Context的实例，只是返回的这两个实例都是空Context。  
 
-### 主要结构
+通过Background返回的空context，它不能被取消，不能传递值，没有deadline，主要被main函数使用、初始化、测试等，是incoming requests的顶级context：  
+```
+// Background returns a non-nil, empty Context. It is never canceled, has no
+// values, and has no deadline. It is typically used by the main function,
+// initialization, and tests, and as the top-level Context for incoming
+// requests.
+func Background() Context {
+	return background
+}
+```
+
+### context相关继承
+context.go文件中有两个结构体继承了context接口：  
+```
+// A cancelCtx can be canceled. When canceled, it also cancels any children
+// that implement canceler.
+type cancelCtx struct {
+	Context
+
+	done chan struct{} // closed by the first cancel call.
+
+	mu       sync.Mutex
+	children map[canceler]struct{} // set to nil by the first cancel call
+	err      error                 // set to non-nil by the first cancel call
+}
+// A valueCtx carries a key-value pair. It implements Value for that key and
+// delegates all other calls to the embedded Context.
+type valueCtx struct {
+	Context
+	key, val interface{}
+}
+```
+context是其中，cancelCtx实现了
+
