@@ -111,9 +111,7 @@ func sysSignalHandleDemo() {
             sigs = append(sigs, sig)
         }
         signal.Notify(c)
-        //但已经不能直接传入Notify函数了
-        //cannot use sigs (type []os.Signal) as type os.Signal in argument to signal.Notify
-        //signal.Notify(c, sigs)
+        //signal.Notify(c, sigs...)
         sig := <-c
 
         err := ss.handle(sig, nil)
