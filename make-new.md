@@ -6,7 +6,10 @@
 ```
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 // The make built-in function allocates and initializes an object of type
 // slice, map, or chan (only). Like new, the first argument is a type, not a
@@ -37,14 +40,30 @@ func main() {
 	fmt.Println(a1)
 
 	var a2 *[]int = new([]int)
+
+	//前面只分配了指针，并没有分配空间，这里的访问，是会出错的
+	//panic: runtime error: index out of range
+	//所以后面还是要用make来分配空间
+	//(*a2)[0] = 1
+
 	*a2 = make([]int, 10)
 	fmt.Println(a2)
 	fmt.Println(*a2)
 	/* 输出&[]，a2本身是一个地址 */
 
+	//现在可以访问了
+	(*a2)[0] = 1
+	fmt.Println("(*a2)[0] = ", (*a2)[0])
+
 	/* 创建一个初始元素个数为5的数组切片，元素初始值为0，并预留10个元素的存储空间 */
 	ar := make([]int, 5, 10)
 	fmt.Println(ar)
+
+	s0 := make(chan os.Signal)
+	fmt.Println("len of chan: ", len(s0))
+
+	s1 := make(chan os.Signal, 5)
+	fmt.Println("len of chan: ", len(s1))
 }
 ```
 
