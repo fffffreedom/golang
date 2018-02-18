@@ -4,7 +4,7 @@
 - struct和interface代码定义
 ```
 type struct_name struct {
-  ......
+	......
 }
 ```
 - interface的定义  
@@ -12,11 +12,11 @@ type struct_name struct {
 - struct的继承
 ```
 type sa struct {
-  ......
+	......
 }
 type sb struct {
-  sa
-  ......
+	sa
+	......
 }
 ```
 - interface的赋值
