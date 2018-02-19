@@ -30,4 +30,32 @@ Go编译器可以从初始化表达式的右值推导出该变量应该声明为
 ### 变量赋值
 
 在Go语法中，变量初始化和变量赋值是两个不同的概念。
+```
+var variable variable-type
+variable = value
+```
 
+#### 多重赋值
+要交换两个变量的值，可以直接使用下面的赋值语句，而无需引中间变量：  
+```
+i,j = j,i
+```
+
+#### 匿名变量
+当你不在乎某个变量时，可以使用下划线`_`来忽略它！比如下面的函数返回三外名字，你只对nickname感兴趣，则可按如下方式获取nickname：  
+```
+func GetName() (firstName, lastName, nickName string) {
+  return "May", "Chan", "Chibi Maruko"
+}
+_, _, nickName := GetName()
+```
+
+## 变量初始化
+
+### struct
+
+```
+
+```
+
+### slice, map, channel
