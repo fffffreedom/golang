@@ -84,6 +84,7 @@ go run glog.go -log_dir=./ -logtostderr=TrueOrFalse -v level
 
 `-v level`的level值如果小于N，则信息可以打印到终端或者文件中！大于等于N则不能被打印出来！  
 `-log_dir`指定日志文件保存的路径。  
+`-logtostderr`指定打印信息输出到标准错误输出还是文件。  
 
 ## 日志格式
 ```
