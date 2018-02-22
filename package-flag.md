@@ -6,7 +6,8 @@ Package flag implements command-line flag parsing.
 Usage:  
   Define flags using flag.String(), Bool(), Int(), etc.  
 
-## param functions
+## functions
+### basic functions
 ```
 func Int(name string, value int, usage string) *int
 func IntVar(p *int, name string, value int, usage string)
@@ -36,6 +37,8 @@ func init() {
 flag.Parse()
 ```
 
+### special functions
+
 ## 命令行参数语法
 ```
 -flag
@@ -46,7 +49,7 @@ or
 --flag=x
 --flag x  // non-boolean flags only
 ```
-一个或两个前置下划线都是可以的，它们是等同的；最后一种形式不能用在bool类型参数，必须使用-flag=false的形式来关闭一个Bool参数。  
+一个或两个前置中划线`-`都是可以的，它们是等同的；最后一种形式不能用在bool类型参数，必须使用-flag=false的形式来关闭一个Bool参数。  
 
 Flag parsing stops just before the first non-flag argument ("-" is a non-flag argument) or after the terminator "--".  
 下面的命令只能设置name参数，后面的age被`-和--`中止了：  
@@ -55,9 +58,12 @@ go run flag.go -name test -- -age 88
 go run flag.go -name test - -age 88
 ```
 
-```
-```
+## Duration flags
+
+Duration flags accept any input valid for time.ParseDuration.  
 
 ## flagset
 
-上面讲到的参数只能用
+The default set of command-line flags is controlled by top-level functions. The FlagSet type allows one to define independent sets of flags, such as to implement **subcommands** in a command-line interface. The methods of FlagSet are analogous to the top-level functions for the command-line flag set.  
+
+
