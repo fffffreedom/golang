@@ -81,6 +81,7 @@ func main() {
 go run glog.go -log_dir=./ -logtostderr=TrueOrFalse -v level
 ```
 其中，glog.{Info|Warning|Error}会把信息打印到文件中，glog.V(N)指定了打印信息的等级，是否能打印出来，由命令行中的-v参数决定。  
+
 `-v level`的level值如果小于N，则信息可以打印到终端或者文件中！大于等于N则不能被打印出来！  
 `-log_dir`指定日志文件保存的路径。  
 
